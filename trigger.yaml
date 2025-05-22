@@ -1,0 +1,36 @@
+apiVersion: cloudbuild.googleapis.com/v1
+kind: BuildTrigger
+metadata:
+  name: bpm-server-trigger
+spec:
+  github:
+    owner: RoyeeB
+    name: bpm-server
+    push:
+      branch: ^main$
+  build:
+    source:
+      repoSource:
+        repoName: bpm-server
+        branchName: main
+    steps:
+      - name: gcr.io/cloud-builders/docker
+        args: ['build', '-t', 'gcr.io/$PROJECT_ID/bpm-server', '.']
+      - name: gcr.io/cloud-builders/docker
+        args: ['push', 'gcr.io/$PROJECT_ID/bpm-server']
+      - name: gcr.io/google.com/cloudsdktool/cloud-sdk
+        entrypoint: gcloud
+        args:
+          - run
+          - deploy
+          - bpm-server
+          - --image=gcr.io/$PROJECT_ID/bpm-server
+          - --region=us-central1
+          - --platform=managed
+          - --allow-unauthenticated
+    images:
+      - gcr.io/$PROJECT_ID/bpm-server
+  filename: cloudbuild.yaml
+  serviceAccount: 731043621084-compute@developer.gserviceaccount.com
+  options:
+    logging: CLOUD_LOGGING_ONLY
